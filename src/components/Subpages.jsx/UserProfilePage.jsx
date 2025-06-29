@@ -40,7 +40,7 @@ const UserProfilePage = () => {
   const fetchInterviewSessions = async () => {
     try {
       setLoading(true)
-      const response = await axios.get("http://localhost:8097/interview/getAllSessionsByUser", {
+      const response = await axios.get("https://ai-interview-agent-backend-02vk.onrender.com/interview/getAllSessionsByUser", {
         withCredentials: true,
       })
       setSessions(response.data || [])
