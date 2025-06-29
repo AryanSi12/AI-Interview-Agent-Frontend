@@ -75,7 +75,7 @@ export default function AIInterviewPage() {
   const handleNavigationConfirm = async () => {
     setShowNavigationAlert(false)
     try{
-      const response = await axios.delete(`https://ai-interview-agent-backend-02vk.onrender.cominterview/deleteSessionById/${interviewDetails.current.sessionId}`,
+      const response = await axios.delete(`https://ai-interview-agent-backend-02vk.onrender.com/interview/deleteSessionById/${interviewDetails.current.sessionId}`,
         {withCredentials: true}
       )
       console.log("Interview ended successfully:", response.data)
@@ -200,7 +200,7 @@ export default function AIInterviewPage() {
         
           setCurrentQuestionIndex(1)
         try {
-          const response = await axios.post("https://ai-interview-agent-backend-02vk.onrender.cominterview/startInterview", formData, {
+          const response = await axios.post("https://ai-interview-agent-backend-02vk.onrender.com/interview/startInterview", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
@@ -255,7 +255,7 @@ export default function AIInterviewPage() {
       // Simulate fetching next question - replace with actual API call
       try {
        const response = await axios.post(
-          `https://ai-interview-agent-backend-02vk.onrender.com/interview/handleAnswer/${interviewDetails.current.sessionId}`,
+          `https://ai-interview-agent-backend-02vk.onrender.com//interview/handleAnswer/${interviewDetails.current.sessionId}`,
           {
             answer: transcription,
           },

@@ -104,7 +104,7 @@ const ResumeAnalysis = () => {
       const formData = new FormData()
       formData.append("file", selectedFile)
 
-      const response = await axios.post("https://ai-interview-agent-backend-02vk.onrender.cominterview/getResumeAnalysis", formData,
+      const response = await axios.post("https://ai-interview-agent-backend-02vk.onrender.com/interview/getResumeAnalysis", formData,
       {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },

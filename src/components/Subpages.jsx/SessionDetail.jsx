@@ -41,7 +41,7 @@ const SessionDetail = () => {
   const fetchSessionDetail = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`https://ai-interview-agent-backend-02vk.onrender.cominterview/getSessionDetailById/${sessionId}`, {
+      const response = await axios.get(`https://ai-interview-agent-backend-02vk.onrender.com/interview/getSessionDetailById/${sessionId}`, {
         withCredentials: true,
       })
       setSession(response.data)
