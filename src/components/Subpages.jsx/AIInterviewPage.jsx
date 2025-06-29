@@ -92,72 +92,61 @@ export default function AIInterviewPage() {
     setShowNavigationAlert(false)
     setPendingNavigation(null)
   }
-useEffect(() => {
-  if (typeof window !== "undefined") {
-    synthRef.current = window.speechSynthesis;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      synthRef.current = window.speechSynthesis
 
-    if (!SpeechRecognition) {
-      setSpeechSupported(false);
-      setError("Speech recognition is not supported in this browser.");
-      return;
-    }
+      // Check for speech recognition support
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-IN";
-    recognitionRef.current = recognition;
+      if (!SpeechRecognition) {
+        setSpeechSupported(false)
+        setError("Speech recognition is not supported in this browser.")
+        return
+      }
 
-    const recentFinals = new Set();
+      // Initialize speech recognition
+      recognitionRef.current = new SpeechRecognition()
+      recognitionRef.current.continuous = true
+      recognitionRef.current.interimResults = true
+      recognitionRef.current.lang = "en-IN"
 
-    recognition.onresult = (event) => {
-      let finalTranscript = "";
+      recognitionRef.current.onresult = (event) => {
+        let finalTranscript = ""
+        let interimTranscript = ""
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript.trim();
-
-        if (event.results[i].isFinal) {
-          const normalized = transcript.toLowerCase().replace(/[^\w\s]/gi, "").trim();
-
-          // Add only if it's not already captured recently
-          if (!recentFinals.has(normalized)) {
-            finalTranscript += transcript + " ";
-            recentFinals.add(normalized);
-
-            // Keep only recent 20 to avoid memory growth
-            if (recentFinals.size > 20) {
-              const oldest = recentFinals.values().next().value;
-              recentFinals.delete(oldest);
-            }
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript
+          } else {
+            interimTranscript += transcript
           }
         }
+
+        setTranscription((prev) => prev + finalTranscript)
       }
 
-      if (finalTranscript) {
-        setTranscription((prev) => prev.trim() + " " + finalTranscript.trim());
+      recognitionRef.current.onerror = (event) => {
+        setError(`Speech recognition error: ${event.error}`)
+        setIsListening(false)
       }
-    };
 
-    recognition.onerror = (event) => {
-      setError(`Speech recognition error: ${event.error}`);
-      setIsListening(false);
-    };
+      recognitionRef.current.onend = () => {
+        setIsListening(false)
+      }
+    }
 
-    recognition.onend = () => {
-      setIsListening(false);
-      // Optional: restart only if needed
-      // setTimeout(() => recognition.start(), 800);
-    };
-  }
-
-  return () => {
-    if (recognitionRef.current) recognitionRef.current.stop();
-    if (synthRef.current) synthRef.current.cancel();
-  };
-}, []);
-
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
+      if (synthRef.current) {
+        synthRef.current.cancel()
+      }
+    }
+  }, [])
 
   // Auto-read question when it changes
   useEffect(() => {
