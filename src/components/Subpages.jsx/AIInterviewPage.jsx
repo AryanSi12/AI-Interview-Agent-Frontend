@@ -75,7 +75,7 @@ export default function AIInterviewPage() {
   const handleNavigationConfirm = async () => {
     setShowNavigationAlert(false)
     try{
-      const response = await axios.delete(`https://ai-interview-agent-backend-02vk.onrender.com/interview/deleteSessionById/${interviewDetails.current.sessionId}`,
+      const response = await axios.delete(`https://ai-interview-agent-backend-02vk.onrender.cominterview/deleteSessionById/${interviewDetails.current.sessionId}`,
         {withCredentials: true}
       )
       console.log("Interview ended successfully:", response.data)
@@ -92,87 +92,72 @@ export default function AIInterviewPage() {
     setShowNavigationAlert(false)
     setPendingNavigation(null)
   }
-
- useEffect(() => {
+useEffect(() => {
   if (typeof window !== "undefined") {
-    synthRef.current = window.speechSynthesis
+    synthRef.current = window.speechSynthesis;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setSpeechSupported(false)
-      setError("Speech recognition is not supported in this browser.")
-      return
+      setSpeechSupported(false);
+      setError("Speech recognition is not supported in this browser.");
+      return;
     }
 
-    const recognition = new SpeechRecognition()
-    recognition.continuous = true
-    recognition.interimResults = true
-    recognition.lang = "en-IN"
-    recognitionRef.current = recognition
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-IN";
+    recognitionRef.current = recognition;
 
-    // 🧠 Memory of last few final transcripts to filter repeats
-    let recentFinals = []
+    const recentFinals = new Set();
 
     recognition.onresult = (event) => {
-      let finalTranscript = ""
-      let interimTranscript = ""
+      let finalTranscript = "";
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript.trim()
+        const transcript = event.results[i][0].transcript.trim();
 
         if (event.results[i].isFinal) {
-          // 🧽 Skip repeated final transcripts
-          if (!recentFinals.includes(transcript)) {
-            finalTranscript += transcript + " "
-            recentFinals.push(transcript)
+          const normalized = transcript.toLowerCase().replace(/[^\w\s]/gi, "").trim();
 
-            // Keep only last 10 to limit memory
-            if (recentFinals.length > 10) recentFinals.shift()
+          // Add only if it's not already captured recently
+          if (!recentFinals.has(normalized)) {
+            finalTranscript += transcript + " ";
+            recentFinals.add(normalized);
+
+            // Keep only recent 20 to avoid memory growth
+            if (recentFinals.size > 20) {
+              const oldest = recentFinals.values().next().value;
+              recentFinals.delete(oldest);
+            }
           }
-        } else {
-          interimTranscript += transcript
         }
-
-        // Debug: Log what’s being picked up
-        // console.log(event.results[i].isFinal ? "[FINAL]" : "[INTERIM]", transcript)
       }
 
       if (finalTranscript) {
-        setTranscription((prev) => prev + finalTranscript)
+        setTranscription((prev) => prev.trim() + " " + finalTranscript.trim());
       }
-    }
+    };
 
     recognition.onerror = (event) => {
-      setError(`Speech recognition error: ${event.error}`)
-      setIsListening(false)
-    }
+      setError(`Speech recognition error: ${event.error}`);
+      setIsListening(false);
+    };
 
     recognition.onend = () => {
-      setIsListening(false)
-
-      // ⛔ Avoid restarting aggressively on mobile — let user click mic again
-      // If you want auto-restart: uncomment below, but debounce it!
-      // setTimeout(() => {
-      //   try {
-      //     recognition.start()
-      //     setIsListening(true)
-      //   } catch (err) {
-      //     console.warn("Restart failed:", err)
-      //   }
-      // }, 1000)
-    }
+      setIsListening(false);
+      // Optional: restart only if needed
+      // setTimeout(() => recognition.start(), 800);
+    };
   }
 
   return () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop()
-    }
-    if (synthRef.current) {
-      synthRef.current.cancel()
-    }
-  }
-}, [])
+    if (recognitionRef.current) recognitionRef.current.stop();
+    if (synthRef.current) synthRef.current.cancel();
+  };
+}, []);
+
 
   // Auto-read question when it changes
   useEffect(() => {
@@ -226,7 +211,7 @@ export default function AIInterviewPage() {
         
           setCurrentQuestionIndex(1)
         try {
-          const response = await axios.post("https://ai-interview-agent-backend-02vk.onrender.com/interview/startInterview", formData, {
+          const response = await axios.post("https://ai-interview-agent-backend-02vk.onrender.cominterview/startInterview", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },

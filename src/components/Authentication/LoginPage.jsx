@@ -35,14 +35,14 @@ export default function LoginPage() {
         password: data.password,
       }
 
-      const loginResponse = await axios.post("https://ai-interview-agent-backend-02vk.onrender.com/Public/LoginUser", jsonForLogin, {
+      const loginResponse = await axios.post("https://ai-interview-agent-backend-02vk.onrender.comPublic/LoginUser", jsonForLogin, {
         headers: {
           "Content-Type": "application/json",
         },
         withCredentials: true,
       })
 
-      const getCurrUser = await axios.get("https://ai-interview-agent-backend-02vk.onrender.com/User/getCurrUser", {
+      const getCurrUser = await axios.get("https://ai-interview-agent-backend-02vk.onrender.comUser/getCurrUser", {
         headers: {
           "Content-Type": "application/json",
         },
