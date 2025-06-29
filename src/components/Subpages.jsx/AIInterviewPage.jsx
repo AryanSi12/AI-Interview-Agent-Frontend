@@ -93,60 +93,78 @@ export default function AIInterviewPage() {
     setPendingNavigation(null)
   }
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      synthRef.current = window.speechSynthesis
+ useEffect(() => {
+  if (typeof window !== "undefined") {
+    synthRef.current = window.speechSynthesis
 
-      // Check for speech recognition support
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
-      if (!SpeechRecognition) {
-        setSpeechSupported(false)
-        setError("Speech recognition is not supported in this browser.")
-        return
+    if (!SpeechRecognition) {
+      setSpeechSupported(false)
+      setError("Speech recognition is not supported in this browser.")
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = "en-IN"
+    recognitionRef.current = recognition
+
+    let lastFinalTranscript = ""
+
+    recognition.onresult = (event) => {
+      let finalTranscript = ""
+      let interimTranscript = ""
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript.trim()
+        if (event.results[i].isFinal) {
+          if (transcript !== lastFinalTranscript) {
+            finalTranscript += transcript + " "
+            lastFinalTranscript = transcript
+          }
+        } else {
+          interimTranscript += transcript
+        }
       }
 
-      // Initialize speech recognition
-      recognitionRef.current = new SpeechRecognition()
-      recognitionRef.current.continuous = true
-      recognitionRef.current.interimResults = true
-      recognitionRef.current.lang = "en-IN"
-
-      recognitionRef.current.onresult = (event) => {
-        let finalTranscript = ""
-        let interimTranscript = ""
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript
-          } else {
-            interimTranscript += transcript
-          }
-        }
-
+      if (finalTranscript) {
         setTranscription((prev) => prev + finalTranscript)
       }
-
-      recognitionRef.current.onerror = (event) => {
-        setError(`Speech recognition error: ${event.error}`)
-        setIsListening(false)
-      }
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false)
-      }
     }
 
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop()
-      }
-      if (synthRef.current) {
-        synthRef.current.cancel()
-      }
+    recognition.onerror = (event) => {
+      setError(`Speech recognition error: ${event.error}`)
+      setIsListening(false)
     }
-  }, [])
+
+    recognition.onend = () => {
+      setIsListening(false)
+
+      // Optionally auto-restart (uncomment if needed)
+      // if (!synthRef.current?.speaking) {
+      //   setTimeout(() => {
+      //     try {
+      //       recognition.start()
+      //       setIsListening(true)
+      //     } catch (err) {
+      //       console.warn("Auto-restart failed:", err)
+      //     }
+      //   }, 500)
+      // }
+    }
+  }
+
+  return () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+    }
+    if (synthRef.current) {
+      synthRef.current.cancel()
+    }
+  }
+}, [])
 
   // Auto-read question when it changes
   useEffect(() => {
