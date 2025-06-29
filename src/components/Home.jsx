@@ -1,11 +1,9 @@
-import CTASection from "./CTAsection";
+import CTASection from "./CTASection";
 import DomainSelection from "./Domain";
 import FeaturesSection from "./FeatureSection";
 import Footer from "./Footer";
 import HeroSection from "./HeroSection";
 import HowItWorks from "./HowItWorks";
-import TestimonialsSection from "./TestimonialSection";
-
 function Home(){
     return (
         <>
@@ -14,7 +12,6 @@ function Home(){
             <FeaturesSection />
             <DomainSelection />
             <HowItWorks />
-         
             <CTASection />
             <Footer />
         </>
