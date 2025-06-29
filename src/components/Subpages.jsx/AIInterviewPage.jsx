@@ -111,7 +111,8 @@ export default function AIInterviewPage() {
     recognition.lang = "en-IN"
     recognitionRef.current = recognition
 
-    let lastFinalTranscript = ""
+    // 🧠 Memory of last few final transcripts to filter repeats
+    let recentFinals = []
 
     recognition.onresult = (event) => {
       let finalTranscript = ""
@@ -119,14 +120,22 @@ export default function AIInterviewPage() {
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript.trim()
+
         if (event.results[i].isFinal) {
-          if (transcript !== lastFinalTranscript) {
+          // 🧽 Skip repeated final transcripts
+          if (!recentFinals.includes(transcript)) {
             finalTranscript += transcript + " "
-            lastFinalTranscript = transcript
+            recentFinals.push(transcript)
+
+            // Keep only last 10 to limit memory
+            if (recentFinals.length > 10) recentFinals.shift()
           }
         } else {
           interimTranscript += transcript
         }
+
+        // Debug: Log what’s being picked up
+        // console.log(event.results[i].isFinal ? "[FINAL]" : "[INTERIM]", transcript)
       }
 
       if (finalTranscript) {
@@ -142,17 +151,16 @@ export default function AIInterviewPage() {
     recognition.onend = () => {
       setIsListening(false)
 
-      // Optionally auto-restart (uncomment if needed)
-      // if (!synthRef.current?.speaking) {
-      //   setTimeout(() => {
-      //     try {
-      //       recognition.start()
-      //       setIsListening(true)
-      //     } catch (err) {
-      //       console.warn("Auto-restart failed:", err)
-      //     }
-      //   }, 500)
-      // }
+      // ⛔ Avoid restarting aggressively on mobile — let user click mic again
+      // If you want auto-restart: uncomment below, but debounce it!
+      // setTimeout(() => {
+      //   try {
+      //     recognition.start()
+      //     setIsListening(true)
+      //   } catch (err) {
+      //     console.warn("Restart failed:", err)
+      //   }
+      // }, 1000)
     }
   }
 
