@@ -94,59 +94,65 @@ export default function AIInterviewPage() {
   }
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      synthRef.current = window.speechSynthesis
+  if (typeof window !== "undefined") {
+    synthRef.current = window.speechSynthesis;
 
-      // Check for speech recognition support
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-      if (!SpeechRecognition) {
-        setSpeechSupported(false)
-        setError("Speech recognition is not supported in this browser.")
-        return
-      }
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      setError("Speech recognition is not supported in this browser.");
+      return;
+    }
 
-      // Initialize speech recognition
-      recognitionRef.current = new SpeechRecognition()
-      recognitionRef.current.continuous = true
-      recognitionRef.current.interimResults = true
-      recognitionRef.current.lang = "en-IN"
+    recognitionRef.current = new SpeechRecognition();
 
-      recognitionRef.current.onresult = (event) => {
-        let finalTranscript = ""
-        let interimTranscript = ""
+    // ❌ Avoid `continuous: true` on mobile — leads to duplication
+    recognitionRef.current.continuous = false;
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript
-          } else {
-            interimTranscript += transcript
-          }
+    // ✅ Only final results to avoid noisy interim updates
+    recognitionRef.current.interimResults = false;
+
+    recognitionRef.current.lang = "en-IN";
+
+    let lastFinalTranscript = "";
+
+    recognitionRef.current.onresult = (event) => {
+      const result = event.results[event.resultIndex];
+      if (result.isFinal) {
+        const transcript = result[0].transcript.trim();
+
+        // ✅ Avoid duplicate transcripts (very common on mobile)
+        if (transcript !== lastFinalTranscript) {
+          setTranscription((prev) => prev + transcript + " ");
+          lastFinalTranscript = transcript;
         }
-
-        setTranscription((prev) => prev + finalTranscript)
       }
+    };
 
-      recognitionRef.current.onerror = (event) => {
-        setError(`Speech recognition error: ${event.error}`)
-        setIsListening(false)
-      }
+    recognitionRef.current.onerror = (event) => {
+      setError(`Speech recognition error: ${event.error}`);
+      setIsListening(false);
+    };
 
-      recognitionRef.current.onend = () => {
-        setIsListening(false)
-      }
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+      // Optional: restart if still intended to listen
+      // recognitionRef.current.start();
+    };
+  }
+
+  return () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
     }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop()
-      }
-      if (synthRef.current) {
-        synthRef.current.cancel()
-      }
+    if (synthRef.current) {
+      synthRef.current.cancel();
     }
-  }, [])
+  };
+}, []);
+
 
   // Auto-read question when it changes
   useEffect(() => {
