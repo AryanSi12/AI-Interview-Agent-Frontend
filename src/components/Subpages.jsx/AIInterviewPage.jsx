@@ -501,15 +501,22 @@ export default function AIInterviewPage() {
             </div>
 
             {/* Completion Message */}
-            {currentQuestionIndex >= interview.numberOfQuestions + 1 && !isLoadingQuestion && (
-              <Card className="rounded-2xl border-green-500/50 bg-green-500/10 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300">
-                <CardContent className="pt-6 text-center">
-                  <p className="text-green-400 font-medium">
-                    🎉 Congratulations! You've completed all interview questions.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            {currentQuestionIndex > interview.numberOfQuestions + 1 && !isLoadingQuestion && (
+  <Card className="rounded-2xl border-green-500/50 bg-green-500/10 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300">
+    <CardContent className="pt-6 text-center space-y-4">
+      <p className="text-green-400 font-medium">
+        🎉 Congratulations! You've completed all interview questions.
+      </p>
+      <Button
+        className="bg-green-500 hover:bg-green-600 text-white"
+        onClick={() => window.location.href = '/'}
+      >
+        Go to Home
+      </Button>
+    </CardContent>
+  </Card>
+)}
+
           </div>
         </main>
 
