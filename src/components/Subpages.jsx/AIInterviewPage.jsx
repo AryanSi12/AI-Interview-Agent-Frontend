@@ -36,6 +36,7 @@ export default function AIInterviewPage() {
   const interview = interviewStore((state) => state.interview)
   const resume = useResumeStore((state) => state.resume)
   const hasStartedInterview = useRef(false)
+  const shouldKeepListeningRef = useRef(false);
 
   const recognitionRef = useRef(null)
   const synthRef = useRef(null)
@@ -138,6 +139,10 @@ export default function AIInterviewPage() {
 
     recognitionRef.current.onend = () => {
       setIsListening(false);
+      if (shouldKeepListeningRef.current) {
+    recognitionRef.current?.start();
+    setIsListening(true);
+  }
       // Optional: restart if still intended to listen
       // recognitionRef.current.start();
     };
@@ -237,6 +242,7 @@ export default function AIInterviewPage() {
     setTranscription("")
 
     try {
+      shouldKeepListeningRef.current = true;
       recognitionRef.current.start()
     } catch (err) {
       setError("Could not start speech recognition")
@@ -246,6 +252,7 @@ export default function AIInterviewPage() {
 
   const stopListening = () => {
     if (recognitionRef.current) {
+      shouldKeepListeningRef.current = false;
       recognitionRef.current.stop()
     }
     setIsListening(false)
