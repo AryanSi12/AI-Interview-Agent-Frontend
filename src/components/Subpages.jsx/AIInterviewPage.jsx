@@ -75,15 +75,15 @@ export default function AIInterviewPage() {
 
   const handleNavigationConfirm = async () => {
     setShowNavigationAlert(false)
-    try{
+    try {
       const response = await axios.delete(`https://ai-interview-agent-backend-02vk.onrender.com/interview/deleteSessionById/${interviewDetails.current.sessionId}`,
-        {withCredentials: true}
+        { withCredentials: true }
       )
       console.log("Interview ended successfully:", response.data)
       navigate("/")
 
-    } 
-    catch(err){
+    }
+    catch (err) {
       throw new Error("Error while navigating back")
     }
     setPendingNavigation(null)
@@ -95,68 +95,61 @@ export default function AIInterviewPage() {
   }
 
   useEffect(() => {
-  if (typeof window !== "undefined") {
-    synthRef.current = window.speechSynthesis;
+    if (typeof window !== "undefined") {
+      synthRef.current = window.speechSynthesis;
 
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      setSpeechSupported(false);
-      setError("Speech recognition is not supported in this browser.");
-      return;
+      if (!SpeechRecognition) {
+        setSpeechSupported(false);
+        setError("Speech recognition is not supported in this browser.");
+        return;
+      }
+
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+
+      recognitionRef.current.lang = "en-IN";
+
+      let lastFinalTranscript = "";
+
+      recognitionRef.current.onresult = (event) => {
+        const result = event.results[event.resultIndex];
+        if (result.isFinal) {
+          const transcript = result[0].transcript.trim();
+          if (transcript !== lastFinalTranscript) {
+            setTranscription((prev) => prev + transcript + " ");
+            lastFinalTranscript = transcript;
+          }
+        }
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        setError(`Speech recognition error: ${event.error}`);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+        if (shouldKeepListeningRef.current) {
+          recognitionRef.current?.start();
+          setIsListening(true);
+        }
+
+      };
     }
 
-    recognitionRef.current = new SpeechRecognition();
-
-    // ❌ Avoid `continuous: true` on mobile — leads to duplication
-    recognitionRef.current.continuous = false;
-
-    // ✅ Only final results to avoid noisy interim updates
-    recognitionRef.current.interimResults = false;
-
-    recognitionRef.current.lang = "en-IN";
-
-    let lastFinalTranscript = "";
-
-    recognitionRef.current.onresult = (event) => {
-      const result = event.results[event.resultIndex];
-      if (result.isFinal) {
-        const transcript = result[0].transcript.trim();
-
-        // ✅ Avoid duplicate transcripts (very common on mobile)
-        if (transcript !== lastFinalTranscript) {
-          setTranscription((prev) => prev + transcript + " ");
-          lastFinalTranscript = transcript;
-        }
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      if (synthRef.current) {
+        synthRef.current.cancel();
       }
     };
-
-    recognitionRef.current.onerror = (event) => {
-      setError(`Speech recognition error: ${event.error}`);
-      setIsListening(false);
-    };
-
-    recognitionRef.current.onend = () => {
-      setIsListening(false);
-      if (shouldKeepListeningRef.current) {
-    recognitionRef.current?.start();
-    setIsListening(true);
-  }
-      // Optional: restart if still intended to listen
-      // recognitionRef.current.start();
-    };
-  }
-
-  return () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    if (synthRef.current) {
-      synthRef.current.cancel();
-    }
-  };
-}, []);
+  }, []);
 
 
   // Auto-read question when it changes
@@ -208,20 +201,20 @@ export default function AIInterviewPage() {
         formData.append("experienceLevel", interview.experienceLevel)
         formData.append("questions", interview.numberOfQuestions)
         formData.append("resume", resume)
-        
-          setCurrentQuestionIndex(1)
+
+        setCurrentQuestionIndex(1)
         try {
           const response = await axios.post("https://ai-interview-agent-backend-02vk.onrender.com/interview/startInterview", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
             withCredentials: true,
-          }) 
+          })
           console.log("Interview question response:", response.data)
           setInterviewQuestion(response.data.nextQuestion)
           interviewDetails.current = response.data
           console.log("Interview details:", interviewDetails.current);
-          
+
         } catch (err) {
           console.error("Failed to fetch questions:", err)
           setError("Failed to load interview question. Please try again.")
@@ -259,7 +252,7 @@ export default function AIInterviewPage() {
   }
 
   const nextQuestion = async () => {
-    if (currentQuestionIndex <= interview.numberOfQuestions+1) {
+    if (currentQuestionIndex <= interview.numberOfQuestions + 1) {
       setIsLoadingQuestion(true)
       setCurrentQuestionIndex((prev) => prev + 1)
       setTranscription("")
@@ -267,8 +260,8 @@ export default function AIInterviewPage() {
 
       // Simulate fetching next question - replace with actual API call
       try {
-       const response = await axios.post(
-          `https://ai-interview-agent-backend-02vk.onrender.com//interview/handleAnswer/${interviewDetails.current.sessionId}`,
+        const response = await axios.post(
+          `https://ai-interview-agent-backend-02vk.onrender.com/interview/handleAnswer/${interviewDetails.current.sessionId}`,
           {
             answer: transcription,
           },
@@ -276,15 +269,15 @@ export default function AIInterviewPage() {
         )
         const { nextQuestion, scoreFeedback } = response.data
 
-      // 👇 Check if the interview was terminated for inappropriate response
-      if (!nextQuestion && scoreFeedback?.includes("flagged as inappropriate")) {
-        alert(
-          "❌ Your response was flagged as inappropriate. The interview has been terminated.\n\nPlease maintain professional communication in future sessions."
-        )
-        navigate("/") // Redirect to home
-        return
-      }
-        
+        // 👇 Check if the interview was terminated for inappropriate response
+        if (!nextQuestion && scoreFeedback?.includes("flagged as inappropriate")) {
+          alert(
+            "❌ Your response was flagged as inappropriate. The interview has been terminated.\n\nPlease maintain professional communication in future sessions."
+          )
+          navigate("/") // Redirect to home
+          return
+        }
+
         setTimeout(() => {
           setInterviewQuestion(response.data.nextQuestion)
           setIsLoadingQuestion(false)
@@ -341,7 +334,7 @@ export default function AIInterviewPage() {
             {/* Progress Indicator */}
             <div className="text-center">
               <p className="text-sm text-slate-400 mb-2">
-                Question {currentQuestionIndex} of {interview.numberOfQuestions+1}
+                Question {currentQuestionIndex} of {interview.numberOfQuestions + 1}
               </p>
               <div className="w-full bg-slate-700 rounded-full h-2">
                 <div
@@ -487,10 +480,10 @@ export default function AIInterviewPage() {
                 Clear Answer
               </Button>
 
-              
+
               <Button
                 onClick={nextQuestion}
-                disabled={currentQuestionIndex >= interview.numberOfQuestions+2 || isLoadingQuestion}
+                disabled={currentQuestionIndex >= interview.numberOfQuestions + 2 || isLoadingQuestion}
                 className="rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {isLoadingQuestion ? (
@@ -508,7 +501,7 @@ export default function AIInterviewPage() {
             </div>
 
             {/* Completion Message */}
-            {currentQuestionIndex >= interview.numberOfQuestions+1 && !isLoadingQuestion && (
+            {currentQuestionIndex >= interview.numberOfQuestions + 1 && !isLoadingQuestion && (
               <Card className="rounded-2xl border-green-500/50 bg-green-500/10 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300">
                 <CardContent className="pt-6 text-center">
                   <p className="text-green-400 font-medium">
